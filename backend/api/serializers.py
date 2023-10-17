@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
@@ -37,7 +36,7 @@ class IngredientAmountSerializer(serializers.ModelSerializer):
             )
         ]
 
-from rest_framework.exceptions import ValidationError
+# from rest_framework.exceptions import ValidationError
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -68,67 +67,45 @@ class RecipeSerializer(serializers.ModelSerializer):
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
-        return Recipe.objects.filter(shoppingcart__user=user, id=obj.id).exists()
+        return Recipe.objects.filter(
+            shoppingcart__user=user, id=obj.id).exists()
 
     def validate(self, data):
         # ingredients = data.get('ingredients', [])
         ingredients = self.initial_data.get('ingredients')
-        
+
         if not ingredients:
             raise serializers.ValidationError({
                 'ingredients': 'Нужен хотя бы один ингредиент для рецепта'
             }, code=400)
-        
+
         ingredient_list = []
-        
+
         for ingredient_item in ingredients:
             ingredient_id = ingredient_item.get('id')
-            amount = ingredient_item.get('amount')
-            
+            # amount = ingredient_item.get('amount')
+
             # if amount < 1:
             #     raise serializers.ValidationError({
-            #         'ingredients': 'Убедитесь, что значение количества ингредиента больше 0'
+            #         'ingredients': 'Количество должно быть больше 1'
             #     }, code=400)
-            
+
             try:
-                ingredient = get_object_or_404(Ingredient, id=ingredient_id)
-            except:
+                ingredient = Ingredient.objects.get(id=ingredient_id)
+            except Ingredient.DoesNotExist:
                 raise serializers.ValidationError({
                     'ingredients': f'Ингредиент с id {ingredient_id} не найден'
                 }, code=400)
-            
+
             if ingredient in ingredient_list:
                 raise serializers.ValidationError({
                     'ingredients': 'Ингредиенты должны быть уникальными'
                 }, code=400)
-            
+
             ingredient_list.append(ingredient)
-        
+
         data['ingredients'] = ingredients
         return data
-        # ingredients = self.initial_data.get('ingredients')
-        # if not ingredients:
-        #     raise serializers.ValidationError({
-        #         'ingredients': 'Нужен хоть один ингридиент для рецепта'}, code=400)
-        # ingredient_list = []
-        # for ingredient_item in ingredients:
-        #     try:
-        #         return Ingredient.objects.get(id=ingredient_item['id'])
-        #     except Ingredient.DoesNotExist:
-        #         raise serializers.ValidationError("Ингредиент не найден", code=400)
-        # ingredient = get_object_or_404(Ingredient,
-        #                                 id=ingredient_item['id'])
-        # if ingredient in ingredient_list:
-        #     raise serializers.ValidationError('Ингридиенты должны '
-        #                                         'быть уникальными', code=400)
-        # ingredient_list.append(ingredient)
-        # if int(ingredient_item['amount']) < 0:
-        #     raise serializers.ValidationError({
-        #         'ingredients': ('Убедитесь, что значение количества '
-        #                         'ингредиента больше 0')
-        #     }, code=400)
-        # data['ingredients'] = ingredients
-        # return data
 
     def create_ingredients(self, ingredients, recipe):
         for ingredient in ingredients:

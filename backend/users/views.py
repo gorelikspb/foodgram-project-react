@@ -16,7 +16,8 @@ User = get_user_model()
 class CustomUserViewSet(UserViewSet):
     pagination_class = LimitPageNumberPagination
 
-    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post', 'delete'], 
+            permission_classes=[IsAuthenticated])
     def subscribe(self, request, id=None):
         user = request.user
         author = get_object_or_404(User, id=id)
@@ -47,7 +48,6 @@ class CustomUserViewSet(UserViewSet):
             return Response({
                 'errors': 'Вы уже отписались'
             }, status=status.HTTP_400_BAD_REQUEST)
-   
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def subscriptions(self, request):

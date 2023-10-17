@@ -16,10 +16,7 @@ services:
 
   backend:
     image: gorelikspb/foodgram_backend
-    # build:
-    #   context: ../backend
-    #   dockerfile: Dockerfile
-    # restart: always
+    restart: always
     volumes:
       - static_value:/app/static/
       - media_value:/app/media/

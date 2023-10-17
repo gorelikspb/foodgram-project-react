@@ -19,7 +19,7 @@ class Tag(models.Model):
         ('#008000', 'Зеленый'),
         ('#FFFF00', 'Желтый'),
         ('#FF0000', 'Красный'),
-        ('#0000FF', 'Синий'),       
+        ('#0000FF', 'Синий'),
     ]
 
     name = models.CharField(max_length=50, unique=True)
@@ -36,8 +36,8 @@ class Tag(models.Model):
 
 
 class Recipe(models.Model):
-    author = models.ForeignKey(User, 
-                               on_delete=models.CASCADE, 
+    author = models.ForeignKey(User,
+                               on_delete=models.CASCADE,
                                related_name='recipes')
     name = models.CharField(max_length=200)
     image = models.ImageField(upload_to='recipes/images/')

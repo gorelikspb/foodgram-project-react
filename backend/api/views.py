@@ -1,21 +1,20 @@
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
+
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, \
+    IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
-from rest_framework.exceptions import PermissionDenied
+# from rest_framework.exceptions import PermissionDenied
 
 
 from api.filters import AuthorAndTagFilter, IngredientSearchFilter
 from api.models import (Cart, Favorite, Ingredient, IngredientAmount, Recipe,
                         Tag)
 from api.pagination import LimitPageNumberPagination
-from api.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
+from api.permissions import IsOwnerOrReadOnly
 from api.serializers import (LiteSerializer, IngredientSerializer,
                              RecipeSerializer, TagSerializer)
 
@@ -24,7 +23,6 @@ class TagsViewSet(ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,)
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-
 
 
 class IngredientsViewSet(ReadOnlyModelViewSet):
@@ -50,7 +48,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return HttpResponse('Unauthorized', status=401)
         return super().create(request, *args, **kwargs)
 
-        # raise PermissionDenied(detail="You must MUST ! be authenticated to create a recipe", code=status.HTTP)
+        # raise PermissionDenied
+        # (detail="You must MUST ! be authenticated to create a recipe",
+        # code=status.HTTP)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated])
@@ -59,7 +59,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
 
         # Проверка на существование записи в избранном
-        favorite_exists = Favorite.objects.filter(user=user, recipe=recipe).exists()
+        favorite_exists = Favorite.objects.filter(
+            user=user, recipe=recipe).exists()
 
         if request.method == 'POST':
             if favorite_exists:
@@ -110,7 +111,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ).values('ingredient__name', 'amount', 'ingredient__measurement_unit')
 
         response = HttpResponse(content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
+        response['Content-Disposition'] = (
+            'attachment; filename="shopping_list.txt"'
+        )
 
         for item in ingredients:
             name = item['ingredient__name']
