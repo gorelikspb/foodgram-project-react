@@ -2,9 +2,18 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = os.environ.get('DJ_SECRET_KEY'),
+SECRET_KEY = os.environ.get('SECRET_KEY'),
 
 DEBUG = True
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost',
+    'http://127.0.0.1',
+    'https://gorelikspb.ddns.net',
+    'http://gorelikspb.ddns.net',
+    'https://62.84.122.92',
+    'http://62.84.122.92',
+]
 
 ALLOWED_HOSTS = ['*']
 
@@ -58,14 +67,13 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('POSTGRES_USER'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': os.environ.get('DB_PORT'),
+        'NAME': os.environ.get('DB_NAME', 'foodgram'),
+        'USER': os.environ.get('POSTGRES_USER', 'foodgram_user'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'foodgram_password'),
+        'HOST': os.environ.get('DB_HOST', 'db'),
+        'PORT': os.environ.get('DB_PORT', 5432),
     }
 }
-
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',

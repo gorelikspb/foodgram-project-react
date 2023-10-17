@@ -85,10 +85,10 @@ class RecipeSerializer(serializers.ModelSerializer):
             ingredient_id = ingredient_item.get('id')
             amount = ingredient_item.get('amount')
             
-            if amount < 1:
-                raise serializers.ValidationError({
-                    'ingredients': 'Убедитесь, что значение количества ингредиента больше 0'
-                }, code=400)
+            # if amount < 1:
+            #     raise serializers.ValidationError({
+            #         'ingredients': 'Убедитесь, что значение количества ингредиента больше 0'
+            #     }, code=400)
             
             try:
                 ingredient = get_object_or_404(Ingredient, id=ingredient_id)
