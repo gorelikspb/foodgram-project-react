@@ -146,37 +146,37 @@ class RecipeSerializer(serializers.ModelSerializer):
 # Попробовал несколько подходов но ничего не помогло.
 # Валится даже если validate_tags сделать пустым, как ниже (
 
-    # def validate_tags(self, tags):
-    #     if not tags:
-    #         raise serializers.ValidationError({
-    #             'tags': 'Нужно выбрать хотя бы один тег для рецепта'
-    #         }, code=400)
+    def validate_tags(self, tags):
+        if not tags:
+            raise serializers.ValidationError({
+                'tags': 'Нужно выбрать хотя бы один тег для рецепта'
+            }, code=400)
 
-    #     tag_list = []
+        tag_list = []
 
-    #     for tag_id in tags:
-    #         try:
-    #             tag = Tag.objects.get(id=tag_id)
-    #         except Tag.DoesNotExist:
-    #             raise serializers.ValidationError({
-    #                 'tags': f'Тег с id {tag_id} не найден'
-    #             }, code=400)
+        for tag_id in tags:
+            try:
+                tag = Tag.objects.get(id=tag_id)
+            except Tag.DoesNotExist:
+                raise serializers.ValidationError({
+                    'tags': f'Тег с id {tag_id} не найден'
+                }, code=400)
 
-    #         if tag in tag_list:
-    #             raise serializers.ValidationError({
-    #                 'tags': 'Теги должны быть уникальными'
-    #             }, code=400)
+            if tag in tag_list:
+                raise serializers.ValidationError({
+                    'tags': 'Теги должны быть уникальными'
+                }, code=400)
 
-    #         tag_list.append(tag)
+            tag_list.append(tag)
 
-    #     return tags
+        return tags
 
     # def validate_tags(self, tags):
     #     return tags
 
     def validate(self, data):
-        # tags = self.initial_data.get('tags')
-        # data['tags'] = self.validate_tags(tags)
+        tags = self.initial_data.get('tags')
+        data['tags'] = self.validate_tags(tags)
 
         ingredients = self.initial_data.get('ingredients')
         data['ingredients'] = self.validate_ingredients(ingredients)
@@ -196,10 +196,10 @@ class RecipeSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         image = validated_data.pop('image')
         ingredients_data = validated_data.pop('ingredients')
+        tags_data = validated_data.pop('tags')
         recipe = Recipe.objects.create(image=image, **validated_data)
-        tags_data = self.initial_data.get('tags')
-        recipe.tags.set(tags_data)
         self.create_ingredients(ingredients_data, recipe)
+        recipe.tags.set(tags_data)
         return recipe
 
     def update(self, instance, validated_data):
