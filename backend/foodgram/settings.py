@@ -19,6 +19,7 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'api',
+    'recipes',
     'users',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -31,6 +32,7 @@ INSTALLED_APPS = [
     'djoser',
     'corsheaders',
     'django_filters',
+
 ]
 
 MIDDLEWARE = [
@@ -64,22 +66,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'foodgram'),
-        'USER': os.environ.get('POSTGRES_USER', 'foodgram_user'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'foodgram_password'),
-        'HOST': os.environ.get('DB_HOST', 'db'),
-        'PORT': os.environ.get('DB_PORT', 5432),
-    }
-}
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.environ.get('DB_NAME', 'foodgram'),
+#         'USER': os.environ.get('POSTGRES_USER', 'foodgram_user'),
+#         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'foodgram_password'),
+#         'HOST': os.environ.get('DB_HOST', 'db'),
+#         'PORT': os.environ.get('DB_PORT', 5432),
 #     }
 # }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -130,9 +132,9 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
     'SERIALIZERS': {
-        'user_create': 'users.serializers.CustomUserCreateSerializer',
-        'user': 'users.serializers.CustomUserSerializer',
-        'current_user': 'users.serializers.CustomUserSerializer',
+        'user_create': 'api.serializers.CustomUserCreateSerializer',
+        'user': 'api.serializers.CustomUserSerializer',
+        'current_user': 'api.serializers.CustomUserSerializer',
     },
     'PERMISSIONS': {
         'user': ('rest_framework.permissions.IsAuthenticated',),

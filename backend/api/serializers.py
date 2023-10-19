@@ -2,9 +2,53 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from api.models import Ingredient, IngredientAmount, Recipe, Tag
+from django.contrib.auth import get_user_model
+from djoser.serializers import UserCreateSerializer, UserSerializer
+from rest_framework.validators import UniqueValidator
+
+from recipes.models import Ingredient, IngredientAmount, Recipe, Tag
 from users.models import Follow
-from users.serializers import CustomUserSerializer
+
+User = get_user_model()
+
+# User serializers
+
+
+class CustomUserCreateSerializer(UserCreateSerializer):
+    email = serializers.EmailField(
+        validators=[UniqueValidator(queryset=User.objects.all())])
+    username = serializers.CharField(
+        validators=[UniqueValidator(queryset=User.objects.all())])
+
+    class Meta:
+        model = User
+        fields = (
+            'email', 'id', 'password', 'username', 'first_name', 'last_name')
+        extra_kwargs = {
+            'email': {'required': True},
+            'username': {'required': True},
+            'password': {'required': True},
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+        }
+
+
+class CustomUserSerializer(UserSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email', 'id', 'username', 'first_name', 'last_name',
+            'is_subscribed')
+
+    def get_is_subscribed(self, obj):
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return Follow.objects.filter(user=user, author=obj.id).exists()
+
+# Recipes serializers
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -35,8 +79,6 @@ class IngredientAmountSerializer(serializers.ModelSerializer):
                 fields=['ingredient', 'recipe']
             )
         ]
-
-# from rest_framework.exceptions import ValidationError
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -70,10 +112,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return Recipe.objects.filter(
             shoppingcart__user=user, id=obj.id).exists()
 
-    def validate(self, data):
-        # ingredients = data.get('ingredients', [])
-        ingredients = self.initial_data.get('ingredients')
-
+    def validate_ingredients(self, ingredients):
         if not ingredients:
             raise serializers.ValidationError({
                 'ingredients': 'Нужен хотя бы один ингредиент для рецепта'
@@ -83,13 +122,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         for ingredient_item in ingredients:
             ingredient_id = ingredient_item.get('id')
-            # amount = ingredient_item.get('amount')
-
-            # if amount < 1:
-            #     raise serializers.ValidationError({
-            #         'ingredients': 'Количество должно быть больше 1'
-            #     }, code=400)
-
             try:
                 ingredient = Ingredient.objects.get(id=ingredient_id)
             except Ingredient.DoesNotExist:
@@ -104,16 +136,62 @@ class RecipeSerializer(serializers.ModelSerializer):
 
             ingredient_list.append(ingredient)
 
-        data['ingredients'] = ingredients
+        return ingredients
+
+# TODO Написал def для валидации тэгов. Теги валидируются, но при корректном
+# создании рецепта ошибка: TypeError: Direct assignment to the forward side of
+# a many-to-many set is prohibited. Use tags.set() instead.
+#  TypeError: Direct assignment
+# Но я и так уже  использую tags.set()!
+# Попробовал несколько подходов но ничего не помогло.
+# Валится даже если validate_tags сделать пустым, как ниже (
+
+    # def validate_tags(self, tags):
+    #     if not tags:
+    #         raise serializers.ValidationError({
+    #             'tags': 'Нужно выбрать хотя бы один тег для рецепта'
+    #         }, code=400)
+
+    #     tag_list = []
+
+    #     for tag_id in tags:
+    #         try:
+    #             tag = Tag.objects.get(id=tag_id)
+    #         except Tag.DoesNotExist:
+    #             raise serializers.ValidationError({
+    #                 'tags': f'Тег с id {tag_id} не найден'
+    #             }, code=400)
+
+    #         if tag in tag_list:
+    #             raise serializers.ValidationError({
+    #                 'tags': 'Теги должны быть уникальными'
+    #             }, code=400)
+
+    #         tag_list.append(tag)
+
+    #     return tags
+
+    # def validate_tags(self, tags):
+    #     return tags
+
+    def validate(self, data):
+        # tags = self.initial_data.get('tags')
+        # data['tags'] = self.validate_tags(tags)
+        
+        ingredients = self.initial_data.get('ingredients')
+        data['ingredients'] = self.validate_ingredients(ingredients)
         return data
 
     def create_ingredients(self, ingredients, recipe):
-        for ingredient in ingredients:
-            IngredientAmount.objects.create(
+        ingredient_amounts = [
+            IngredientAmount(
                 recipe=recipe,
                 ingredient_id=ingredient.get('id'),
                 amount=ingredient.get('amount'),
             )
+            for ingredient in ingredients
+        ]
+        IngredientAmount.objects.bulk_create(ingredient_amounts)
 
     def create(self, validated_data):
         image = validated_data.pop('image')

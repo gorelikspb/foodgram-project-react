@@ -15,15 +15,11 @@ class Ingredient(models.Model):
 
 
 class Tag(models.Model):
-    COLORS = [
-        ('#008000', 'Зеленый'),
-        ('#FFFF00', 'Желтый'),
-        ('#FF0000', 'Красный'),
-        ('#0000FF', 'Синий'),
-    ]
 
     name = models.CharField(max_length=50, unique=True)
-    color = models.CharField(max_length=7, choices=COLORS)
+    color = models.CharField(
+        max_length=7,
+        help_text="Задайте цвет в формате hex (например, #RRGGBB)")
     slug = models.SlugField(max_length=50, null=True, blank=True)
 
     def save(self, *args, **kwargs):
@@ -48,7 +44,6 @@ class Recipe(models.Model):
         related_name='recipes',
     )
     tags = models.ManyToManyField(Tag)
-
     cooking_time = models.PositiveSmallIntegerField(
         validators=(
             validators.MinValueValidator(
@@ -56,22 +51,22 @@ class Recipe(models.Model):
 
 
 class IngredientAmount(models.Model):
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['ingredient', 'recipe'],
+                name='ingredientrecipe'
+            )
+        ]
+
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE,
+                                   related_name='ingredient_amounts')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     amount = models.PositiveSmallIntegerField(
         validators=(
             validators.MinValueValidator(
                 1, message='Нужен хотя бы 1 ингредиент'),),
     )
-
-
-class Meta:
-    constraints = [
-        models.UniqueConstraint(
-            fields=['ingredient', 'recipe'],
-            name='ingredientrecipe'
-        )
-    ]
 
 
 class Favorite(models.Model):

@@ -7,12 +7,10 @@ from rest_framework.permissions import IsAuthenticated, \
     IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
-# from rest_framework.exceptions import PermissionDenied
-
 
 from api.filters import AuthorAndTagFilter, IngredientSearchFilter
-from api.models import (Cart, Favorite, Ingredient, IngredientAmount, Recipe,
-                        Tag)
+from recipes.models import (Cart, Favorite, Ingredient, IngredientAmount, 
+                            Recipe, Tag)
 from api.pagination import LimitPageNumberPagination
 from api.permissions import IsOwnerOrReadOnly
 from api.serializers import (LiteSerializer, IngredientSerializer,
@@ -37,20 +35,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     pagination_class = LimitPageNumberPagination
-    filter_class = AuthorAndTagFilter
-    permission_classes = [IsOwnerOrReadOnly]
+    filterset_class = AuthorAndTagFilter
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-
-    def create(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return HttpResponse('Unauthorized', status=401)
-        return super().create(request, *args, **kwargs)
-
-        # raise PermissionDenied
-        # (detail="You must MUST ! be authenticated to create a recipe",
-        # code=status.HTTP)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated])
@@ -72,7 +61,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer = LiteSerializer(recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-            # return self.add_obj(Favorite, request.user, pk)
         elif request.method == 'DELETE':
             return self.delete_obj(Favorite, request.user, pk)
         return None
@@ -82,8 +70,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, pk=None):
         user = request.user
         recipe = self.get_object()
+        cart_item = Cart.objects.filter(user=user, recipe=recipe)
+
         if request.method == 'POST':
-            if Cart.objects.filter(user=user, recipe=recipe).exists():
+            if cart_item.exists():
                 return Response({
                     'errors': 'Рецепт уже добавлен в список'
                 }, status=status.HTTP_400_BAD_REQUEST)
@@ -91,15 +81,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer = LiteSerializer(recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        elif request.method == 'DELETE':
-            cart_item = Cart.objects.filter(user=user, recipe=recipe)
+        if request.method == 'DELETE':
             if cart_item.exists():
                 cart_item.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             return Response({
                 'errors': 'Рецепт уже удален'
             }, status=status.HTTP_400_BAD_REQUEST)
-            # return self.delete_obj(Cart, request.user, pk)
         return None
 
     @action(detail=False, methods=['get'],
@@ -122,37 +110,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             response.write(f'{name}: {amount} {unit}\n')
 
         return response
-        # final_list = {}
-        # ingredients = IngredientAmount.objects.filter(
-        #     recipe__cart__user=request.user).values_list(
-        #     'ingredient__name', 'ingredient__measurement_unit',
-        #     'amount')
-        # for item in ingredients:
-        #     name = item[0]
-        #     if name not in final_list:
-        #         final_list[name] = {
-        #             'measurement_unit': item[1],
-        #             'amount': item[2]
-        #         }
-        #     else:
-        #         final_list[name]['amount'] += item[2]
-        # pdfmetrics.registerFont(
-        #     TTFont('Slimamif', 'Slimamif.ttf', 'UTF-8'))
-        # response = HttpResponse(content_type='application/pdf')
-        # response['Content-Disposition'] = ('attachment; '
-        #                                    'filename="shopping_list.pdf"')
-        # page = canvas.Canvas(response)
-        # page.setFont('Slimamif', size=24)
-        # page.drawString(200, 800, 'Список ингредиентов')
-        # page.setFont('Slimamif', size=16)
-        # height = 750
-        # for i, (name, data) in enumerate(final_list.items(), 1):
-        #     page.drawString(75, height, (f'<{i}> {name} - {data["amount"]}, '
-        #                                  f'{data["measurement_unit"]}'))
-        #     height -= 25
-        # page.showPage()
-        # page.save()
-        # return response
 
     def add_obj(self, model, user, pk):
         if model.objects.filter(user=user, recipe__id=pk).exists():
