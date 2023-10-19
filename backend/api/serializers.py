@@ -177,7 +177,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         # tags = self.initial_data.get('tags')
         # data['tags'] = self.validate_tags(tags)
-        
+
         ingredients = self.initial_data.get('ingredients')
         data['ingredients'] = self.validate_ingredients(ingredients)
         return data

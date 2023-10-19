@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from api.filters import AuthorAndTagFilter, IngredientSearchFilter
-from recipes.models import (Cart, Favorite, Ingredient, IngredientAmount, 
+from recipes.models import (Cart, Favorite, Ingredient, IngredientAmount,
                             Recipe, Tag)
 from api.pagination import LimitPageNumberPagination
 from api.permissions import IsOwnerOrReadOnly
