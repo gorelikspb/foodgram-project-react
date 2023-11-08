@@ -24,6 +24,4 @@ This platform allows users to publish recipes, add favorite recipes to their col
 - JWT
 - Postman
 
- #Python #Django #React #Docker #Nginx #API #PostgreSQL #JWT
-
  gorelikspb@gmail.com
